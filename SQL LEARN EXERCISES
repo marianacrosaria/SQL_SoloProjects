@@ -1,0 +1,236 @@
+## SQL LEARN EXERCISES WITH PATIENTS DATASET
+
+# Show first name and last name of patients who does not have allergies. (null)
+
+SELECT 
+first_name,
+last_name
+FROM patients
+WHERE
+allergies IS NULL
+
+# Show first name and last name of patients that weight within the range of 100 to 120 (inclusive)
+
+SELECT 
+first_name,
+last_name
+FROM patients
+WHERE
+weight BETWEEN 100 AND 120
+
+# Show first name, last name, and the full province name of each patient.
+
+SELECT
+first_name,
+last_name,
+province_name
+FROM
+patients
+INNER JOIN
+province_names ON patients.province_id = province_names.province_id
+
+#Show all columns for patients who have one of the following patient_ids:
+1,45,534,879,1000 
+
+SELECT
+*
+FROM
+patients
+WHERE
+patient_id In (1, 45, 534, 879, 1000)
+
+# Show the patient id and the total number of admissions for patient_id 579.
+
+SELECT
+patient_id,
+COUNT(patient_id)
+FROM
+admissions
+WHERE
+patient_id = 579
+
+# Based on the cities that our patients live in, show unique cities that are in province_id 'NS'?
+
+SELECT
+distinct city
+FROM
+patients
+WHERE
+province_id = 'NS'
+
+# Based on cities where our patient lives in, write a query to display the list of unique city starting with a vowel (a, e, i, o, u). Show the result order in ascending by city.
+
+SELECT
+city
+FROM
+patients
+WHERE
+city like '[aeiou]%'
+ORDER BY
+city
+
+# Write a query to find the first_name, last name and birth date of patients who has height greater than 160 and weight greater than 70
+
+SELECT
+first_name,
+last_name,
+birth_date
+FROM
+patients
+WHERE
+height > 160 AND weight > 70
+
+# Show the city and the total number of patients in the city. Order from most to least patients and then by city name ascending.
+
+SELECT
+city,
+COUNT(patient_id) AS pacients_per_city
+FROM
+patients
+GROUP BY
+city
+ORDER BY
+pacients_per_city DESC,
+city
+
+# Show first and last name, allergies from patients which have allergies to either 'Penicillin' or 'Morphine'. Show results ordered ascending by allergies then by first_name then by last_name.
+
+SELECT
+first_name,
+last_name,
+allergies
+FROM
+patients
+WHERE
+allergies = 'Penicillin' OR allergies = 'Morphine'
+ORDER BY
+allergies,
+first_name,
+last_name
+
+# We want to display each patient's full name in a single column. Their last_name in all upper letters must appear first, then first_name in all lower case letters. Separate the last_name and first_name with a comma. Order the list by the first_name in decending order
+EX: SMITH,jane
+
+SELECT
+CONCAT(UPPER (last_name), ",", LOWER(first_name))
+FROM
+patients
+ORDER BY
+first_name DESC
+
+# Show patient_id, attending_doctor_id, and diagnosis for admissions that match one of the two criteria:
+1. patient_id is an odd number and attending_doctor_id is either 1, 5, or 19.
+2. attending_doctor_id contains a 2 and the length of patient_id is 3 characters.
+
+SELECT
+patient_id,
+attending_doctor_id,
+diagnosis
+FROM
+admissions
+WHERE
+(patient_id % 2 <> 0 AND attending_doctor_id IN (1, 5, 19)) OR 
+(attending_doctor_id like '%2%' AND LEN(patient_id) =3)
+
+# Display patient's full name, height in the units feet rounded to 1 decimal, weight in the unit pounds rounded to 0 decimals, birth_date, gender non abbreviated.
+Convert CM to feet by dividing by 30.48.
+Convert KG to pounds by multiplying by 2.205.
+
+SELECT
+CONCAT(first_name, " ", last_name) AS patient_full_name,
+ROUND((height/30.48),1) AS round_height_ft,
+ROUND((weight*2.205),0) AS round_weight_pds,
+birth_date,
+(CASE 
+WHEN gender = 'M' THEN 'Male'
+WHEN gender = 'F' THEN 'Female'
+ELSE 'No Gender'
+END) as full_gender
+FROM
+patients
+
+# Show patient_id, weight, height, isObese from the patients table. Display isObese as a boolean 0 or 1. Obese is defined as weight(kg)/(height(m)2) >= 30.
+weight is in units kg.
+height is in units cm.
+
+SELECT
+patient_id,
+weight,
+height,
+CASE
+WHEN weight/((height*0.01)*(height*0.01)) >= 30 THEN '1'
+ELSE '0'
+END AS isObese
+FROM
+patients
+
+# Show patient_id, first_name, last_name, and attending doctor's specialty.
+Show only the patients who has a diagnosis as 'Epilepsy' and the doctor's first name is 'Lisa'
+Check patients, admissions, and doctors tables for required information.
+
+SELECT
+patients.patient_id,
+patients.first_name,
+patients.last_name,
+doctors.specialty
+FROM
+patients
+JOIN
+admissions on patients.patient_id = admissions.patient_id
+JOIN
+doctors on admissions.attending_doctor_id = doctors.doctor_id
+WHERE
+diagnosis = 'Epilepsy' AND doctors.first_name = 'Lisa'
+
+# For each day display the total amount of admissions on that day. Display the amount changed from the previous date.
+
+WITH temp_table as (SELECT admission_date,
+    COUNT(*) AS total_admissions
+    FROM admissions
+    GROUP BY admission_date
+    ORDER BY admission_date DESC)
+SELECT admission_date,
+       total_admissions,
+       total_admissions - LAG(total_admissions, 1, NULL) OVER (ORDER BY admission_date) AS change
+FROM 
+temp_table
+ORDER BY
+admission_date
+
+# We are looking for a specific patient. Pull all columns for the patient who matches the following criteria:
+- First_name contains an 'r' after the first two letters.
+- Identifies their gender as 'F'
+- Born in February, May, or December
+- Their weight would be between 60kg and 80kg
+- Their patient_id is an odd number
+- They are from the city 'Kingston'
+
+SELECT 
+* 
+FROM patients
+WHERE
+first_name like '__r%' AND
+gender = 'F' AND
+month(birth_date) IN (2, 5, 12) AND
+weight BETWEEN 60 AND 80 AND
+patient_id % 2 <> 0 AND
+city = 'Kingston'
+
+# We need a breakdown for the total amount of admissions each doctor has started each year. Show the doctor_id, doctor_full_name, specialty, year, total_admissions for that year.
+
+SELECT
+doctors.doctor_id,
+CONCAT(doctors.first_name, " ", doctors.last_name) AS doctor_full_name,
+doctors.specialty,
+YEAR(admissions.admission_date) AS year_admissions,
+COUNT(admissions.patient_id) AS total_admissions
+FROM
+doctors
+LEFT JOIN
+admissions on doctors.doctor_id = admissions.attending_doctor_id
+GROUP BY
+doctor_full_name,
+year_admissions
+ORDER BY
+doctor_full_name,
+year_admissions
