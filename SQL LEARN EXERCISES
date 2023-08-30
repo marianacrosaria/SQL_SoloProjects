@@ -1,6 +1,6 @@
 ## SQL LEARN EXERCISES WITH PATIENTS DATASET
 
-# Show first name and last name of patients who does not have allergies. (null)
+# Show first name and last name of patients who does not have allergies. 
 
 SELECT 
 first_name,
@@ -29,8 +29,7 @@ patients
 INNER JOIN
 province_names ON patients.province_id = province_names.province_id
 
-#Show all columns for patients who have one of the following patient_ids:
-1,45,534,879,1000 
+# Show all columns for patients who have one of the following patient_ids: 1,45,534,879,1000 
 
 SELECT
 *
